@@ -1,15 +1,12 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
+import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
-import { VictoryChart, VictoryLine, VictoryBar, VictoryTheme, VictoryAxis, VictoryGroup } from 'victory-native';
 import { Typography } from '@/src/components/ui/Typography';
 import { Card } from '@/src/components/ui/Card';
-import { Colors, Spacing } from '@/src/utils/theme';
+import { Colors, Spacing, Radius } from '@/src/utils/theme';
 import { CheckInsRepository } from '@/src/db/repositories/CheckInsRepository';
 import { RelapsesRepository } from '@/src/db/repositories/RelapsesRepository';
-
-const { width } = Dimensions.get('window');
 
 interface AnalyticsData {
   summary: { resisted: number; checkins: number; relapses: number };
@@ -25,7 +22,7 @@ export default function AnalyticsScreen() {
   const fetchAnalytics = useCallback(() => {
     try {
       const summary = {
-        resisted: CheckInsRepository.getCount(), // Simplified resisted count
+        resisted: CheckInsRepository.getCount(),
         checkins: CheckInsRepository.getCount(),
         relapses: RelapsesRepository.getCount(),
       };
@@ -61,6 +58,9 @@ export default function AnalyticsScreen() {
     return `${displayH}:00 ${period}`;
   };
 
+  const maxIntensity = Math.max(...data.intensityTrend.map((d) => d.intensity), 1);
+  const maxTriggerCount = Math.max(...data.triggerDist.map((d) => d.y), 1);
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
@@ -69,7 +69,6 @@ export default function AnalyticsScreen() {
           <Typography variant="h2">Progress Analytics</Typography>
         </View>
 
-        {/* Weekly Stats Grid */}
         <View style={styles.statsGrid}>
           <Card style={styles.gridItem} padding="sm">
             <Typography variant="h2" color={Colors.success}>{data.summary.checkins}</Typography>
@@ -85,7 +84,6 @@ export default function AnalyticsScreen() {
           </Card>
         </View>
 
-        {/* Prediction Card */}
         <Card elevated style={styles.predictionCard}>
           <Typography variant="label" color={Colors.primary}>RISK PATTERN</Typography>
           {data.riskHour !== null ? (
@@ -104,33 +102,29 @@ export default function AnalyticsScreen() {
           )}
         </Card>
 
-        {/* Trend Chart */}
         <View style={styles.section}>
           <Typography variant="h3">Urge Intensity (Last 7 Days)</Typography>
-          <Card style={styles.chartCard} padding="none">
-            {data.intensityTrend.length > 1 ? (
-              <VictoryChart width={width - 50} height={200} theme={VictoryTheme.grayscale} padding={40}>
-                <VictoryAxis 
-                  style={{ 
-                    axis: { stroke: Colors.border }, 
-                    tickLabels: { fill: Colors.textSecondary, fontSize: 10 } 
-                  }}
-                  tickFormat={(x) => x.split('-')[2]} // Just day of month
-                />
-                <VictoryAxis dependentAxis 
-                  style={{ 
-                    axis: { stroke: 'transparent' }, 
-                    tickLabels: { fill: Colors.textSecondary, fontSize: 10 },
-                    grid: { stroke: Colors.divider }
-                  }} 
-                  domain={[0, 5]}
-                />
-                <VictoryLine
-                  data={data.intensityTrend.map(d => ({ x: d.date, y: d.intensity }))}
-                  style={{ data: { stroke: Colors.primary, strokeWidth: 3 } }}
-                  animate={{ duration: 1000, onLoad: { duration: 500 } }}
-                />
-              </VictoryChart>
+          <Card style={styles.chartCard}>
+            {data.intensityTrend.length > 0 ? (
+              data.intensityTrend.map((point) => (
+                <View key={point.date} style={styles.row}>
+                  <Typography variant="caption" color={Colors.textSecondary} style={styles.rowLabel}>
+                    {point.date.split('-').slice(1).join('/')}
+                  </Typography>
+                  <View style={styles.barTrack}>
+                    <View
+                      style={[
+                        styles.barFill,
+                        {
+                          width: `${(point.intensity / maxIntensity) * 100}%`,
+                          backgroundColor: Colors.primary,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Typography variant="caption">{point.intensity}</Typography>
+                </View>
+              ))
             ) : (
               <View style={styles.emptyChart}>
                 <Typography variant="bodySmall">Not enough data for trend.</Typography>
@@ -139,26 +133,27 @@ export default function AnalyticsScreen() {
           </Card>
         </View>
 
-        {/* Trigger Breakdown */}
         <View style={styles.section}>
           <Typography variant="h3">Common Triggers</Typography>
-          <Card style={styles.chartCard} padding="none">
+          <Card style={styles.chartCard}>
             {data.triggerDist.length > 0 ? (
-              <VictoryChart width={width - 50} height={220} padding={{ left: 80, right: 30, top: 20, bottom: 40 }}>
-                <VictoryAxis 
-                  style={{ 
-                    axis: { stroke: 'transparent' }, 
-                    tickLabels: { fill: Colors.text, fontSize: 11, fontWeight: 'bold' } 
-                  }}
-                />
-                <VictoryBar
-                  horizontal
-                  data={data.triggerDist}
-                  style={{ data: { fill: Colors.primary, width: 20 } }}
-                  cornerRadius={{ top: 10, bottom: 10 }}
-                  animate={{ duration: 1000 }}
-                />
-              </VictoryChart>
+              data.triggerDist.map((item) => (
+                <View key={item.x} style={styles.row}>
+                  <Typography variant="caption" style={styles.rowLabel}>{item.x}</Typography>
+                  <View style={styles.barTrack}>
+                    <View
+                      style={[
+                        styles.barFill,
+                        {
+                          width: `${(item.y / maxTriggerCount) * 100}%`,
+                          backgroundColor: Colors.info,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Typography variant="caption">{item.y}</Typography>
+                </View>
+              ))
             ) : (
               <View style={styles.emptyChart}>
                 <Typography variant="bodySmall">Log relapses to see trigger data.</Typography>
@@ -180,6 +175,16 @@ const styles = StyleSheet.create({
   gridItem: { flex: 1, alignItems: 'center', gap: Spacing.xs },
   predictionCard: { backgroundColor: Colors.surfaceAlt, borderLeftWidth: 4, borderLeftColor: Colors.primary },
   section: { gap: Spacing.md },
-  chartCard: { backgroundColor: Colors.surface, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  emptyChart: { height: 150, justifyContent: 'center', alignItems: 'center' },
+  chartCard: { gap: Spacing.md },
+  emptyChart: { height: 120, justifyContent: 'center', alignItems: 'center' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  rowLabel: { width: 72 },
+  barTrack: {
+    flex: 1,
+    height: 10,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.surfaceAlt,
+    overflow: 'hidden',
+  },
+  barFill: { height: '100%', borderRadius: Radius.full },
 });

@@ -79,7 +79,7 @@ export default function RelapseScreen() {
           <Typography variant="hero" style={styles.centerText}>🌱</Typography>
           <Typography variant="h1" style={styles.centerText}>New Beginning</Typography>
           <Typography variant="body" color={Colors.textSecondary} style={styles.centerText}>
-             "Fall seven times, stand up eight." Your progress isn't lost, your experience is simply growing. Let's start again.
+             “Fall seven times, stand up eight.” Your progress isn’t lost, your experience is simply growing. Let’s start again.
           </Typography>
           <ActionButton 
             label="Back to Dashboard" 
@@ -102,7 +102,7 @@ export default function RelapseScreen() {
               <Typography variant="label" color={Colors.danger}>RESET WARNING</Typography>
               <Typography variant="h1">Are you sure?</Typography>
               <Typography variant="body">
-                This will end your current streak. We want to help you learn from this moment so it doesn't happen again.
+                This will end your current streak. We want to help you learn from this moment so it doesn’t happen again.
               </Typography>
               <View style={styles.actions}>
                 <ActionButton label="Yes, I Relapsed" onPress={nextStep} variant="danger" fullWidth />

@@ -56,7 +56,7 @@ export const RelapsesRepository = {
    */
   getTriggerDistribution: (): { x: string; y: number }[] => {
     const db = getDb();
-    const res = db.getAllSync<{ trigger: string; count: number }>(`
+    const res = db.getAllSync<{ x: string; y: number }>(`
       SELECT trigger as x, COUNT(*) as y FROM Relapses GROUP BY trigger ORDER BY y DESC;
     `);
     return res;
