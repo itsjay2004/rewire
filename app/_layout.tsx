@@ -6,6 +6,8 @@ import { NotificationService } from '@/src/services/NotificationService';
 import { useAppStore } from '@/src/store/useAppStore';
 import { SettingsRepository } from '@/src/db/repositories/SettingsRepository';
 import { AppState } from 'react-native';
+import { initDb } from '@/src/db';
+import { Colors } from '@/src/utils/theme';
 
 export const unstable_settings = {
   anchor: '(tabs)',
