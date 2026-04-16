@@ -1,5 +1,4 @@
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
 import { router } from 'expo-router';
 
 /**
@@ -10,7 +9,8 @@ import { router } from 'expo-router';
 // Configure how notifications should be handled when the app is foregrounded
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
   }),
@@ -35,26 +35,24 @@ export const NotificationService = {
    * This ensures reminders continue even if the app isn't opened for a few days.
    */
   scheduleCheckInNotifications: async () => {
-    // Clear existing notifications to avoid duplicates/overlap
     await Notifications.cancelAllScheduledNotificationsAsync();
 
     const FIVE_HOURS_IN_SECONDS = 5 * 60 * 60;
-    const TOTAL_NOTIFICATIONS = 24; // ~5 days (120 hours / 5)
+    const TOTAL_NOTIFICATIONS = 24;
 
     for (let i = 1; i <= TOTAL_NOTIFICATIONS; i++) {
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: "Time for a Check-In 🧘",
-            body: "How are you feeling right now? Logging your mood helps you stay on track.",
-            data: { screen: 'check-in' },
-            sound: true,
-          },
-          trigger: {
-            // Schedule every 5, 10, 15... hours from now
-            seconds: FIVE_HOURS_IN_SECONDS * i,
-            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL
-          },
-        });
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Time for a Check-In 🧘',
+          body: 'How are you feeling right now? Logging your mood helps you stay on track.',
+          data: { screen: 'check-in' },
+          sound: true,
+        },
+        trigger: {
+          seconds: FIVE_HOURS_IN_SECONDS * i,
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        },
+      });
     }
   },
 
@@ -62,11 +60,10 @@ export const NotificationService = {
    * Set up listeners for notification interactions.
    */
   setupNotificationListeners: () => {
-    // Listener for when a notification is tapped
-    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+    const responseListener = Notifications.addNotificationResponseReceivedListener((response) => {
       const screen = response.notification.request.content.data?.screen;
       if (screen === 'check-in') {
-        router.push('/check-in' as any);
+        router.push('/check-in' as never);
       }
     });
 
@@ -79,26 +76,25 @@ export const NotificationService = {
    * Aggressively schedule notifications to bring user back.
    */
   scheduleEmergencyAlert: async () => {
-    // We schedule a few immediate and near-future notifications
     const alerts = [
-        { title: "🚨 EMERGENCY LOCK ACTIVE", body: "RETURN TO REWIRE NOW.", delay: 1 },
-        { title: "⚠️ ALERT: LOCK BYPASS ATTEMPTED", body: "Come back and finish your focus session.", delay: 5 },
-        { title: "🛑 STAY FOCUSED", body: "Do not leave the app. Your streak depends on it.", delay: 10 },
+      { title: '🚨 EMERGENCY LOCK ACTIVE', body: 'RETURN TO REWIRE NOW.', delay: 1 },
+      { title: '⚠️ ALERT: LOCK BYPASS ATTEMPTED', body: 'Come back and finish your focus session.', delay: 5 },
+      { title: '🛑 STAY FOCUSED', body: 'Do not leave the app. Your streak depends on it.', delay: 10 },
     ];
 
     for (const alert of alerts) {
-        await Notifications.scheduleNotificationAsync({
-            content: {
-                title: alert.title,
-                body: alert.body,
-                sound: true,
-                priority: Notifications.AndroidNotificationPriority.MAX,
-            },
-            trigger: {
-                seconds: alert.delay,
-                type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL
-            }
-        });
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: alert.title,
+          body: alert.body,
+          sound: true,
+          priority: Notifications.AndroidNotificationPriority.MAX,
+        },
+        trigger: {
+          seconds: alert.delay,
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        },
+      });
     }
   },
 
@@ -107,8 +103,7 @@ export const NotificationService = {
    */
   cancelAll: async () => {
     await Notifications.cancelAllScheduledNotificationsAsync();
-    // Reschedule the standard 5-hour check-ins so they aren't lost
-    NotificationService.scheduleCheckInNotifications();
+    await NotificationService.scheduleCheckInNotifications();
   },
 
   /**
@@ -117,16 +112,15 @@ export const NotificationService = {
   scheduleRiskReminder: async (hour: number, minute: number = 0) => {
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: "Stay Strong tonight! 💪",
+        title: 'Stay Strong tonight! 💪',
         body: "You usually find this time difficult. You've got this, maybe it's time to sleep?",
         sound: true,
       },
       trigger: {
         hour,
         minute,
-        repeats: true,
-        type: Notifications.SchedulableTriggerInputTypes.DAILY
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
       },
     });
-  }
+  },
 };
