@@ -49,4 +49,5 @@ app-example
 node_modules/
 .expo/
 dist/
+.vscode
 
